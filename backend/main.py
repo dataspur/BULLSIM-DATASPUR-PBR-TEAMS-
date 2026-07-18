@@ -21,6 +21,10 @@ app = FastAPI(title="DataSpur PBR Teams Simulator", version="1.0")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+@app.get("/health")
+def health():
+    return {"status": "ok", "loaded_rides": len(rides_data)}
+
 # ====== LOAD ALL DATA AT STARTUP ======
 rides_data = []
 with open(DATA / "rides.csv") as f:
