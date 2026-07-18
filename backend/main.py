@@ -16,7 +16,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 import uvicorn
 
-DATA = Path.home() / "dataspur" / "data"
+DATA = Path(__file__).parent / "data"
 app = FastAPI(title="DataSpur PBR Teams Simulator", version="1.0")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
