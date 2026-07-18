@@ -352,11 +352,12 @@ def dashboard(team_code: str):
     }
 
 # Serve static frontend
+import os
 FRONTEND_PATH = Path.home() / "dataspur" / "frontend"
 FRONTEND_PATH.mkdir(exist_ok=True)
 app.mount("/app", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")
 
 if __name__ == "__main__":
-    print("Starting DataSpur API on http://localhost:8420")
-    print("Frontend: http://localhost:8420/app")
-    uvicorn.run(app, host="0.0.0.0", port=8420)
+    port = int(os.environ.get("PORT", 8420))
+    print(f"Starting DataSpur API on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
