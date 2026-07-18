@@ -16,7 +16,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 import uvicorn
 
-DATA = Path.home() / "dataspur" / "data"
+DATA = Path(__file__).parent / "data"
 app = FastAPI(title="DataSpur PBR Teams Simulator", version="1.0")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -353,7 +353,7 @@ def dashboard(team_code: str):
 
 # Serve static frontend
 import os
-FRONTEND_PATH = Path.home() / "dataspur" / "frontend"
+FRONTEND_PATH = Path(__file__).parent.parent / "frontend"
 FRONTEND_PATH.mkdir(exist_ok=True)
 app.mount("/app", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")
 
@@ -361,3 +361,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8420))
     print(f"Starting DataSpur API on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
