@@ -44,15 +44,11 @@ with open(DATA / "rider_profiles.csv") as f:
 logger.info(f"Loaded {len(rides_data)} rides, {len(bull_profiles)} bulls, {len(rider_profiles)} riders")
 
 # ====== PYDANTIC MODELS ======
-class BullItem(BaseModel):
-    id: str = ""
-    name: str = ""
-
 class SimulateRequest(BaseModel):
     team_code: str
-    bulls: List[Union[BullItem, str]] = []  # Accept {id, name} objects OR bare ID strings
+    bulls: List[Any] = []  # Accept {id, name} dicts OR bare ID strings
     opponent_team: Optional[str] = None
-    opponent_bulls: Optional[List[Union[BullItem, str]]] = None
+    opponent_bulls: Optional[List[Any]] = None
     manual_matchups: Optional[Dict[str, str]] = None
 
 # ====== TEAM DEFINITIONS ======
