@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-import csv, re, json, math
+import csv, re, json, math, os
 from collections import defaultdict
 from pathlib import Path
 import numpy as np
