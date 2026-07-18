@@ -1,0 +1,14 @@
+# Large data files — ship separately via BULLSIM package
+data/
+backend/data/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+
+# Secrets  
+.env
+cookies.txt

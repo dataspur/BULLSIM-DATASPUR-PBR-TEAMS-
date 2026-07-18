@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSpur — PBR Teams Matchup Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0a0e14;color:#c9d1d9;min-height:100vh}
+.header{background:#11161d;border-bottom:1px solid #1f2937;padding:12px 24px;display:flex;align-items:center;gap:16px}
+.header h1{font-size:20px;font-weight:700;color:#58a6ff}
+.header .badge{background:#1a2332;border:1px solid #30363d;padding:4px 12px;border-radius:12px;font-size:12px;color:#8b949e}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:#11161d;border:1px solid #1f2937;border-radius:8px;padding:20px}
+.panel h2{font-size:15px;font-weight:600;color:#58a6ff;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.panel h3{font-size:13px;color:#8b949e;margin:12px 0 8px}
+select,input,button{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:8px 12px;border-radius:6px;font-size:13px;width:100%;margin:4px 0}
+button{background:#1a3a5c;cursor:pointer;font-weight:600;transition:all .2s}
+button:hover{background:#244872;border-color:#58a6ff}
+.btn-primary{background:#238636;border-color:#2ea043}
+.btn-primary:hover{background:#2ea043}
+.btn-danger{background:#8b1a1a;border-color:#da3633}
+.btn-sm{padding:4px 8px;font-size:11px;width:auto}
+.row{display:flex;gap:8px;align-items:center}
+.flex-wrap{flex-wrap:wrap}
+.matchup-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;background:#0d1117;border-radius:6px;margin:4px 0;border:1px solid #1f2937;align-items:center}
+.matchup-row:hover{border-color:#30363d}
+.prob{font-weight:700;font-size:14px}
+.prob-high{color:#3fb950}
+.prob-mid{color:#d29922}
+.prob-low{color:#f85149}
+.score-pred{color:#58a6ff;font-size:12px}
+.stat{background:#0d1117;border:1px solid #1f2937;border-radius:6px;padding:12px;text-align:center}
+.stat-value{font-size:24px;font-weight:700;color:#58a6ff}
+.stat-label{font-size:11px;color:#8b949e;text-transform:uppercase;margin-top:4px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.bull-pen{display:flex;flex-wrap:wrap;gap:4px}
+.bull-tag{background:#1a2332;border:1px solid #30363d;padding:4px 10px;border-radius:12px;font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer}
+.bull-tag:hover{border-color:#58a6ff}
+.bull-tag .remove{margin-left:4px;color:#f85149;cursor:pointer;font-weight:700}
+.strategy-box{padding:12px;border-radius:6px;margin:8px 0;font-weight:600;font-size:13px}
+.strategy-conservative{background:#0d3320;border:1px solid #238636;color:#3fb950}
+.strategy-balanced{background:#1a2332;border:1px solid #30363d;color:#d29922}
+.strategy-aggressive{background:#331010;border:1px solid #da3633;color:#f85149}
+.feedback{font-size:13px;padding:4px 0}
+.feedback-good{color:#3fb950}
+.feedback-bad{color:#f85149}
+.roster-item{cursor:pointer;padding:6px 10px;border-radius:4px;font-size:12px;display:flex;justify-content:space-between;margin:2px 0}
+.roster-item:hover{background:#1a2332}
+.roster-item.selected{background:#1a3a5c;border-left:3px solid #58a6ff}
+.loading{color:#8b949e;font-style:italic;font-size:13px}
+.hidden{display:none}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>DATASPUR</h1>
+  <span class="badge">PBR TEAMS SIMULATOR</span>
+  <span style="flex:1"></span>
+  <span style="font-size:12px;color:#8b949e">Powered by Probullstats Data</span>
+</div>
+
+<div class="container">
+  <div class="grid">
+    <!-- LEFT PANEL: Setup -->
+    <div>
+      <div class="panel">
+        <h2>🎯 TEAM SELECTION</h2>
+        <select id="teamSelect" onchange="loadRoster()">
+          <option value="">Select your team...</option>
+        </select>
+        <div id="rosterDisplay" class="hidden" style="margin-top:12px">
+          <h3>ROSTER</h3>
+          <div id="rosterList"></div>
+        </div>
+      </div>
+      
+      <div class="panel" id="bullPenPanel" style="margin-top:20px">
+        <h2>🐂 BULL PEN</h2>
+        <div class="row">
+          <input type="text" id="bullSearch" placeholder="Search bull by name or ID..." onkeyup="searchBulls()">
+          <button class="btn-sm" onclick="searchBulls()">Search</button>
+        </div>
+        <div id="bullResults" style="max-height:150px;overflow-y:auto;margin-top:8px"></div>
+        <h3>YOUR DRAWN BULLS</h3>
+        <div id="bullPen" class="bull-pen"></div>
+        
+        <div class="row" style="margin-top:12px">
+          <input type="text" id="quickBull" placeholder="Quick add: bull ID or name...">
+          <button class="btn-sm" onclick="addQuickBull()">Add</button>
+          <button class="btn-sm btn-danger" onclick="clearBulls()">Clear</button>
+        </div>
+      </div>
+      
+      <div class="panel" style="margin-top:20px" id="opponentPanel">
+        <h2>⚔️ OPPOSING TEAM</h2>
+        <select id="opponentSelect" onchange="loadOpponent()">
+          <option value="">No opponent (score only)...</option>
+        </select>
+        <div id="opponentBulls" class="hidden" style="margin-top:8px">
+          <h3>THEIR BULL PEN</h3>
+          <input type="text" id="oppBullInput" placeholder="Quick add opponent bull...">
+          <button class="btn-sm" onclick="addOppBull()" style="margin-top:4px">Add</button>
+          <div id="oppBullPen" class="bull-pen" style="margin-top:4px"></div>
+        </div>
+      </div>
+      
+      <button class="btn-primary" style="margin-top:16px;padding:12px;font-size:14px" onclick="runSimulation()">
+        🔬 RUN SIMULATION
+      </button>
+    </div>
+    
+    <!-- RIGHT PANEL: Results -->
+    <div>
+      <div class="panel" id="resultsPanel" style="min-height:400px">
+        <h2>📊 SIMULATION RESULTS</h2>
+        <div id="resultsContent">
+          <div class="loading">Select a team, add bulls, and run simulation...</div>
+        </div>
+      </div>
+      
+      <div class="panel hidden" id="manualPanel" style="margin-top:20px">
+        <h2>🔧 MANUAL MATCHUP TEST</h2>
+        <p style="font-size:12px;color:#8b949e;margin-bottom:8px">
+          Drag or select rider-bull assignments to compare vs optimal
+        </p>
+        <div id="manualMatchups"></div>
+        <button class="btn-sm" onclick="checkManual()" style="margin-top:8px">Check vs Optimal</button>
+        <div id="manualFeedback"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8420/api';
+let teams = [];
+let currentTeam = null;
+let currentBulls = [];
+let oppBulls = [];
+let selectedRider = null;
+
+// Init
+fetch(`${API}/teams`).then(r=>r.json()).then(d=>{
+  teams = d.teams;
+  d.teams.forEach(t => {
+    document.getElementById('teamSelect').innerHTML += `<option value="${t.code}">${t.name}</option>`;
+    document.getElementById('opponentSelect').innerHTML += `<option value="${t.code}">${t.name}</option>`;
+  });
+});
+
+function loadRoster(){
+  const code = document.getElementById('teamSelect').value;
+  if(!code) return;
+  currentTeam = code;
+  
+  fetch(`${API}/team/${code}/roster`).then(r=>r.json()).then(d=>{
+    const list = document.getElementById('rosterList');
+    list.innerHTML = d.riders.map(r => `
+      <div class="roster-item" onclick="selectRider('${r.name}')" id="rider-${r.name.replace(/[^a-z]/gi,'')}">
+        <span>${r.name}</span>
+        <span style="color:#58a6ff">${r.cover_pct}% · ${r.avg_score.toFixed(1)}</span>
+      </div>
+    `).join('');
+    document.getElementById('rosterDisplay').classList.remove('hidden');
+    
+    // Show manual matchup panel
+    buildManualMatchups(d.riders);
+  });
+}
+
+function loadOpponent(){
+  document.getElementById('opponentBulls').classList.remove('hidden');
+}
+
+function selectRider(name){
+  selectedRider = name;
+  document.querySelectorAll('.roster-item').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('rider-' + name.replace(/[^a-z]/gi,''));
+  if(el) el.classList.add('selected');
+}
+
+let searchTimeout;
+function searchBulls(){
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const q = document.getElementById('bullSearch').value;
+    if(q.length < 2) { document.getElementById('bullResults').innerHTML = ''; return; }
+    fetch(`${API}/bulls/search?q=${encodeURIComponent(q)}&limit=15`)
+      .then(r=>r.json()).then(d=>{
+        document.getElementById('bullResults').innerHTML = d.bulls.map(b => `
+          <div style="padding:4px;cursor:pointer;font-size:12px;border-bottom:1px solid #1f2937"
+               onclick="addBull('${b.id}','${b.name.replace(/'/g,"\\'")}')">
+            ${b.name} (ID:${b.id}) | ${b.outs} outs | ${b.buckoff_pct}% buckoff
+          </div>
+        `).join('');
+      });
+  }, 300);
+}
+
+function addBull(id, name){
+  if(currentBulls.length >= 5) { alert('Max 5 bulls in pen'); return; }
+  if(currentBulls.find(b => b.id === id)) return;
+  currentBulls.push({id, name});
+  renderBullPen();
+}
+
+function addQuickBull(){
+  const val = document.getElementById('quickBull').value.trim();
+  if(!val) return;
+  // Try to find in search
+  fetch(`${API}/bulls/search?q=${encodeURIComponent(val)}&limit=1`)
+    .then(r=>r.json()).then(d=>{
+      if(d.bulls.length > 0){
+        addBull(d.bulls[0].id, d.bulls[0].name);
+        document.getElementById('quickBull').value = '';
+      } else {
+        // Add as custom bull
+        addBull(val, val);
+        document.getElementById('quickBull').value = '';
+      }
+    });
+}
+
+function addOppBull(){
+  const val = document.getElementById('oppBullInput').value.trim();
+  if(!val || oppBulls.length >= 5) return;
+  oppBulls.push({id: val, name: val});
+  renderOppBullPen();
+  document.getElementById('oppBullInput').value = '';
+}
+
+function renderBullPen(){
+  const el = document.getElementById('bullPen');
+  el.innerHTML = currentBulls.map(b => `
+    <span class="bull-tag">${b.name} <span class="remove" onclick="removeBull('${b.id}')">×</span></span>
+  `).join('');
+}
+
+function renderOppBullPen(){
+  document.getElementById('oppBullPen').innerHTML = oppBulls.map(b => `
+    <span class="bull-tag">${b.name} <span class="remove" onclick="removeOppBull('${b.id}')">×</span></span>
+  `).join('');
+}
+
+function removeBull(id){ currentBulls = currentBulls.filter(b => b.id !== id); renderBullPen(); }
+function removeOppBull(id){ oppBulls = oppBulls.filter(b => b.id !== id); renderOppBullPen(); }
+function clearBulls(){ currentBulls = []; renderBullPen(); }
+
+async function runSimulation(){
+  if(!currentTeam || currentBulls.length === 0){
+    alert('Select a team and add bulls to the pen');
+    return;
+  }
+  
+  const resultsDiv = document.getElementById('resultsContent');
+  resultsDiv.innerHTML = '<div class="loading">Running simulation...</div>';
+  
+  const body = {
+    team_code: currentTeam,
+    bulls: currentBulls,
+    opponent_team: document.getElementById('opponentSelect').value || undefined,
+    opponent_bulls: oppBulls.length > 0 ? oppBulls : undefined,
+  };
+  
+  const resp = await fetch(`${API}/simulate`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+  
+  // Render results
+  let html = '';
+  
+  // Strategy
+  const stratClass = data.strategy === 'CONSERVATIVE' ? 'strategy-conservative' :
+                     data.strategy === 'AGGRESSIVE' ? 'strategy-aggressive' : 'strategy-balanced';
+  html += `<div class="strategy-box ${stratClass}">STRATEGY: ${data.strategy} — Target ${data.target_covers} covers</div>`;
+  
+  // Stats
+  html += `<div class="stats-grid">
+    <div class="stat"><div class="stat-value">${data.optimal_score}</div><div class="stat-label">Optimal Score</div></div>
+    <div class="stat"><div class="stat-value">${data.expected_covers.toFixed(1)}</div><div class="stat-label">Expected Covers</div></div>
+  </div>`;
+  
+  // Optimal matchups
+  html += '<h3>OPTIMAL LINEUP</h3>';
+  data.optimal_matchups.forEach(m => {
+    const probClass = m.cover_prob > 0.6 ? 'prob-high' : m.cover_prob > 0.35 ? 'prob-mid' : 'prob-low';
+    html += `<div class="matchup-row">
+      <div><strong>${m.rider}</strong><br><span style="font-size:10px;color:#8b949e">${m.rider_career}</span></div>
+      <div style="text-align:right">
+        <span class="prob ${probClass}">${(m.cover_prob*100).toFixed(0)}%</span>
+        <span class="score-pred"> · ${m.exp_score} pts</span><br>
+        <span style="font-size:10px;color:#8b949e">🐂 ${m.bull_name} · ${m.bull_record}</span>
+      </div>
+    </div>`;
+  });
+  
+  // Opponent
+  if(data.opponent_analysis){
+    html += '<h3>⚔️ OPPONENT</h3>';
+    html += `<div style="font-size:12px;color:#8b949e">${data.opponent_analysis.team}: 
+      ${data.opponent_analysis.optimal_score} pts · ${data.opponent_analysis.expected_covers} expected covers</div>`;
+    html += `<div class="strategy-box ${stratClass}" style="font-size:12px;margin-top:4px">${data.opponent_analysis.strategy_recommendation}</div>`;
+  }
+  
+  resultsDiv.innerHTML = html;
+  
+  // Update manual panel
+  if(data.optimal_matchups.length > 0){
+    document.getElementById('manualPanel').classList.remove('hidden');
+  }
+}
+
+function buildManualMatchups(riders){
+  if(currentBulls.length === 0) return;
+  let html = '';
+  riders.slice(0, 5).forEach(r => {
+    html += `<div class="row" style="margin:4px 0">
+      <span style="width:140px;font-size:12px">${r.name}</span>
+      <select id="manual-${r.name.replace(/[^a-z]/gi,'')}" style="width:auto;flex:1;font-size:11px">
+        <option value="">-- pick bull --</option>
+        ${currentBulls.map(b => `<option value="${b.name}">${b.name}</option>`).join('')}
+      </select>
+    </div>`;
+  });
+  document.getElementById('manualMatchups').innerHTML = html;
+}
+
+async function checkManual(){
+  if(!currentTeam || currentBulls.length === 0) return;
+  
+  const manual = {};
+  document.querySelectorAll('[id^="manual-"]').forEach(sel => {
+    if(sel.value){
+      const riderName = sel.id.replace('manual-','').replace(/([a-z])([A-Z])/g, '$1 $2');
+      // Find actual rider name from roster
+      const rosterSelect = document.querySelectorAll('.roster-item');
+      rosterSelect.forEach(el => {
+        const name = el.querySelector('span').textContent;
+        if(name.replace(/[^a-z]/gi,'') === riderName || name.startsWith(riderName)){
+          manual[name] = sel.value;
+        }
+      });
+    }
+  });
+  
+  if(Object.keys(manual).length === 0) { alert('Select at least one rider-bull matchup'); return; }
+  
+  const body = {
+    team_code: currentTeam,
+    bulls: currentBulls,
+    opponent_team: document.getElementById('opponentSelect').value || undefined,
+    opponent_bulls: oppBulls.length > 0 ? oppBulls : undefined,
+    manual_matchups: manual,
+  };
+  
+  const resp = await fetch(`${API}/simulate`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+  
+  if(!data.manual_analysis) return;
+  
+  const ma = data.manual_analysis;
+  let html = '<h3>📋 MANUAL CHECK RESULTS</h3>';
+  
+  ma.matchups.forEach(m => {
+    const icon = m.is_optimal ? '✓' : '⚠';
+    const color = m.is_optimal ? 'feedback-good' : 'feedback-bad';
+    html += `<div class="feedback ${color}">${icon} ${m.rider} → ${m.bull_name}: ${(m.cover_prob*100).toFixed(0)}% · ${m.exp_score} pts</div>`;
+  });
+  
+  const diffClass = ma.score_diff_vs_optimal < 0 ? 'feedback-bad' : 'feedback-good';
+  html += `<div style="margin-top:8px;font-size:13px">
+    <div>Manual score: <strong>${ma.expected_score}</strong> vs Optimal: <strong>${data.optimal_score}</strong></div>
+    <div class="${diffClass}">Difference: ${ma.score_diff_vs_optimal > 0 ? '+' : ''}${ma.score_diff_vs_optimal} pts</div>
+    <div>Correct picks: ${ma.correct_picks}/${ma.total_picks}</div>
+  </div>`;
+  
+  document.getElementById('manualFeedback').innerHTML = html;
+}
+</script>
+</body>
+</html>
