@@ -355,11 +355,10 @@ def dashboard(team_code: str):
         'avg_cover_pct': round(sum(r['cover_pct'] for r in riders_data) / max(len(riders_data), 1), 1),
     }
 
-# Serve static frontend
-import os
-FRONTEND_PATH = Path.home() / "dataspur" / "frontend"
-FRONTEND_PATH.mkdir(exist_ok=True)
-app.mount("/app", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")
+# Frontend served by lovable.dev/Vercel — not bundled in API
+FRONTEND_PATH = Path(__file__).parent.parent / "frontend"
+if FRONTEND_PATH.exists():
+    app.mount("/app", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8420))
