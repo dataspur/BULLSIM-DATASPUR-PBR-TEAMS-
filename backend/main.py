@@ -62,7 +62,7 @@ if temporal_bull_path.exists():
             bull_temporal[row["bull_id_str"]] = row
     logger.info(f"Loaded {len(bull_temporal)} bull temporal stats")
 
-# Load XGBoost models
+# Load XGBoost models (native API — no sklearn needed)
 clf_path = DATA / "clf_model.json"
 reg_path = DATA / "reg_model.json"
 meta_path = DATA / "model_metadata.json"
@@ -71,12 +71,12 @@ XGBOOST_AVAILABLE = False
 try:
     import xgboost as xgb
     if clf_path.exists() and reg_path.exists():
-        clf_model = xgb.XGBClassifier()
+        clf_model = xgb.Booster()
         clf_model.load_model(str(clf_path))
-        reg_model = xgb.XGBRegressor()
+        reg_model = xgb.Booster()
         reg_model.load_model(str(reg_path))
         XGBOOST_AVAILABLE = True
-        logger.info(f"XGBoost models loaded: clf={clf_model.n_estimators} trees, reg={reg_model.n_estimators} trees")
+        logger.info(f"XGBoost models loaded successfully")
     else:
         logger.warning(f"Model files not found: clf={clf_path.exists()} reg={reg_path.exists()}")
 except ImportError:
@@ -240,8 +240,9 @@ def predict_cover(rider_name: str, bull_id: str,
         try:
             X = _build_features(rider_name, bull_id, perf_num, go_num,
                               is_pbr, is_prca, event_qual_sofar)
-            # XGBoost raw probability
-            prob_raw = float(clf_model.predict_proba(X)[0, 1])
+            # XGBoost native Booster API
+            dmat = xgb.DMatrix(X)
+            prob_raw = float(clf_model.predict(dmat)[0])
             
             # Honest recalibration: all-data training inflates probs above
             # the walk-forward range. At 25.1% actual qual rate, a default
@@ -256,7 +257,7 @@ def predict_cover(rider_name: str, bull_id: str,
             exp_score = 85.0
             if rs['covers'] > 0:
                 try:
-                    score_pred_raw = float(reg_model.predict(X)[0])
+                    score_pred_raw = float(reg_model.predict(dmat)[0])
                     exp_score = max(0, min(100, score_pred_raw))
                 except:
                     exp_score = rs['total_score'] / rs['covers']
