@@ -96,7 +96,7 @@ def spin_match(row):
     spin = row.get("bull_spin_dir")
     if pd.isna(hand) or pd.isna(spin):
         return 0
-    if (spin == "LEFT" and hand == "Right") or (spin == "RIGHT" and hand == "Left"):
+    if (spin == "LEFT" and hand == "Left") or (spin == "RIGHT" and hand == "Right"):
         return 1
     return -1
 

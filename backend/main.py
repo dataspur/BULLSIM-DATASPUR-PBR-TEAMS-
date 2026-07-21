@@ -201,10 +201,14 @@ def _build_features(rider_name: str, bull_id: str, perf_num: int = 1, go_num: in
     
     spin_hand = 0
     if bull_spin and rider_hand:
-        if (bull_spin == "LEFT" and rider_hand == "Right") or (bull_spin == "RIGHT" and rider_hand == "Left"):
-            spin_hand = 1
+        # REALITY (verified against 18,210 rides):
+        # Same side (spin matches hand) = BETTER (38% cover)
+        # Opposite side = WORSE (22% cover)
+        # Bulls spin toward free hand → easier counterbalance
+        if (bull_spin == "LEFT" and rider_hand == "Left") or (bull_spin == "RIGHT" and rider_hand == "Right"):
+            spin_hand = 1   # actually favorable
         elif bull_spin in ("LEFT", "RIGHT") and rider_hand in ("Left", "Right"):
-            spin_hand = -1
+            spin_hand = -1  # actually unfavorable
     
     features = np.array([[
         rider_career_qual_pct, rider_career_avg_score,
@@ -301,7 +305,8 @@ def predict_cover(rider_name: str, bull_id: str,
     # Spin×handedness bonus
     spin_hand_bonus = 0
     if bull_spin and rider_hand:
-        if (bull_spin == "LEFT" and rider_hand == "Right") or (bull_spin == "RIGHT" and rider_hand == "Left"):
+        # REALITY: same side = better
+        if (bull_spin == "LEFT" and rider_hand == "Left") or (bull_spin == "RIGHT" and rider_hand == "Right"):
             spin_hand_bonus = 0.08
         elif bull_spin in ("LEFT", "RIGHT") and rider_hand in ("Left", "Right"):
             spin_hand_bonus = -0.06
